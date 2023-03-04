@@ -71,11 +71,11 @@ public class HandCardsData {
 
     private Set<Integer> getEyes(List<Integer> handCards, Set<Integer> categories) {
         Set<Integer> eyesSet = new HashSet<>();
-        for(Integer category : categories) {
+        categories.forEach(category -> {
             if(Collections.frequency(handCards, category) >= 2) {
                 eyesSet.add(category);
             }
-        }
+        });
         return eyesSet;
     }
 
@@ -86,12 +86,12 @@ public class HandCardsData {
     }
 
     private void removeAllTriplet(List<Integer> handCards, Set<Integer> categories) {
-        for(Integer category : categories) {
+        categories.forEach(category -> {
             int frequency = Collections.frequency(handCards, category);
             if(frequency >= 3 && frequency <=4) {
                 handCards.removeIf(card -> card == category);
             }
-        }
+        });
     }
 
     private void removeAllSequence(List<Integer> handCards) {
