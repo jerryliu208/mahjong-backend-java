@@ -12,7 +12,7 @@ public class ResponseData {
     public ResponseData(){
         this.code = ResponseEnum.SUCCESS.getCode();
         this.msg = ResponseEnum.SUCCESS.getMsg();
-        this.data = new Object();
+        //this.data = null;
     }
 
     public ResponseData(Integer code){
@@ -35,6 +35,10 @@ public class ResponseData {
         this.code = ResponseEnum.SUCCESS.getCode();
         this.msg = ResponseEnum.SUCCESS.getMsg();
         this.data = data;
+    }
+    public ResponseData(Integer code, String msg){
+        this.code = code;
+        this.msg = msg;
     }
 
     public ResponseData(Integer code, String msg, Object data){

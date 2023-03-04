@@ -23,7 +23,7 @@ public class MahjongController {
      */
     @PostMapping(CHECK_HAND_CARDS)
     public Object checkHandCards(@RequestBody HandCardsData handCardsData){
-        return new ResponseData(mahjongService.checkHandCards(handCardsData));
+        return mahjongService.checkHandCards(handCardsData);
     }
 
     /**
