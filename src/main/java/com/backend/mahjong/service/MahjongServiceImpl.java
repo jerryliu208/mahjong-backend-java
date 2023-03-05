@@ -19,23 +19,6 @@ public class MahjongServiceImpl implements MahjongService {
         if (handCardsData == null) {
             return new ResponseData(400, "參數不可為空");
         }
-        //檢查手牌數量是否正確
-        if (handCardsData.getHandCards() == null || handCardsData.getLastCard() == null) {
-            return new ResponseData(400, "手牌數量不正確！無法胡牌...");
-        }
-        if (handCardsData.getNotConcealedCards().isEmpty()) {
-            if (handCardsData.getHandCards().size() != 16) {
-                return new ResponseData(400, "手牌數量不正確！無法胡牌...");
-            }
-        } else {
-            int amountOfChiPongKong = 0;
-            List<Integer> notConcealedCards = new ArrayList<>(handCardsData.getNotConcealedCards());
-            amountOfChiPongKong += HandCardsData.removeAllTriplet(notConcealedCards);
-            amountOfChiPongKong += HandCardsData.removeAllSequence(notConcealedCards);
-            if (!notConcealedCards.isEmpty() || handCardsData.getHandCards().size() + 3 * amountOfChiPongKong != 16) {
-                return new ResponseData(400, "手牌數量不正確！無法胡牌...");
-            }
-        }
         //如果手牌含有非法參數，表示無法構成牌型
         if (!Arrays.stream(MahjongCardEnum.values())
                 .map(MahjongCardEnum::getCode)
@@ -45,8 +28,25 @@ public class MahjongServiceImpl implements MahjongService {
                 .map(MahjongCardEnum::getCode)
                 .collect(Collectors.toSet())
                 .containsAll(handCardsData.getNotConcealedCards()) ||
-                MahjongCardEnum.findByCode(handCardsData.getLastCard()) == null) {
+            MahjongCardEnum.findByCode(handCardsData.getLastCard()) == null) {
             return new ResponseData(400, "手牌資訊錯誤！無法胡牌...");
+        }
+        //檢查手牌數量是否正確
+        if (handCardsData.getHandCards() == null || handCardsData.getLastCard() == null) {
+            return new ResponseData(400, "手牌數量不正確！無法胡牌...");
+        }
+        if (handCardsData.getNotConcealedCards().isEmpty()) { //如果門前清則檢查手牌即可
+            if (handCardsData.getHandCards().size() != 16) {
+                return new ResponseData(400, "手牌數量不正確！無法胡牌...");
+            }
+        } else {
+            int amountOfPongKong = 0;
+            List<Integer> notConcealedCards = new ArrayList<>(handCardsData.getNotConcealedCards());
+            amountOfPongKong += HandCardsData.removeAllTriplet(notConcealedCards);
+            if (notConcealedCards.size() % 3 != 0 ||
+                handCardsData.getHandCards().size() + notConcealedCards.size() + 3 * amountOfPongKong != 16) {
+                return new ResponseData(400, "手牌數量不正確！無法胡牌...");
+            }
         }
 
         CheckHandCardsResData resData = new CheckHandCardsResData();
