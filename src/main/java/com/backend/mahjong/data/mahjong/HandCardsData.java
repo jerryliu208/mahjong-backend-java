@@ -9,6 +9,8 @@ import java.util.*;
 public class HandCardsData {
     private List<Integer> handCards; //手牌
 
+    private List<Integer> notConcealedCards = new ArrayList<>(); //門前牌
+
     private List<Integer> flowerCards; //花牌
 
     private Integer lastCard; //最後一張牌(胡到的牌)
@@ -25,8 +27,6 @@ public class HandCardsData {
 
     private boolean isDeadWallDraw; //是否槓上開花
 
-    private boolean isAllConcealedHand; //是否為門清
-
     private boolean isBlessingOfHeaven; //是否天胡
 
     private boolean isBlessingOfEarth; //是否地胡
@@ -35,84 +35,114 @@ public class HandCardsData {
 
     /**
      * 檢查是否胡牌
-     * @return
+     *
+     * @return 是否胡牌
      */
-    public boolean checkIsHu(){
-        if(this.handCards == null || this.lastCard == null) {
+    public boolean checkIsHu() {
+        if (this.handCards == null || this.lastCard == null) {
             return false;
         }
-        List<Integer> handCards = new ArrayList<>(this.handCards);
-        //加入最後一張拿到的牌
-        handCards.add(this.lastCard);
-        //取出此手牌中包含哪些牌
-        Set<Integer> handCardsCategories = new HashSet<>(handCards);
-        //先取出所有可能的雀頭
-        Set<Integer> eyes = getEyes(handCards, handCardsCategories);
-        if(eyes.isEmpty()) {
+        //從手牌中取出所有可能的雀頭
+        List<Integer> handCardsToGetEye = new ArrayList<>(this.handCards);
+        handCardsToGetEye.add(this.lastCard); //加入最後一張拿到的牌
+        Set<Integer> eyes = getEyes(handCardsToGetEye); //取出所有可能的雀頭
+        if (eyes.isEmpty()) {
             return false;
         }
-        //依照所有可能的雀頭下去判斷
-        boolean isHu = false;
-        for(Integer eye : eyes) {
-            handCards = new ArrayList<>(this.handCards);
+        //依照所有可能的雀頭下去判斷是否胡牌
+        for (Integer eye : eyes) {
+            List<Integer> notConcealedCards = new ArrayList<>(this.notConcealedCards);
+            List<Integer> handCards = new ArrayList<>(this.handCards);
+            handCards.add(this.lastCard);
             //取出雀頭
             removeEye(handCards, eye);
-            //取出刻子
-            removeAllTriplet(handCards, handCardsCategories);
+            //取出刻子和槓子
+            removeAllTriplet(notConcealedCards); //門前
+            removeAllTriplet(handCards); //手牌
             //取出順子
-            removeAllSequence(handCards);
-            if(handCards.isEmpty()) {
-                isHu = true;
-                break;
+            removeAllSequence(notConcealedCards); //門前
+            removeAllSequence(handCards); //手牌
+            if (notConcealedCards.isEmpty() && handCards.isEmpty()) {
+                return true;
             }
         }
-        return isHu;
+        return false;
     }
 
-    private Set<Integer> getEyes(List<Integer> handCards, Set<Integer> categories) {
+    /**
+     * 取出手牌中所有可能的雀頭
+     *
+     * @param handCards 手牌
+     * @return 此手牌中所有可能的雀頭
+     */
+    private Set<Integer> getEyes(List<Integer> handCards) {
+        Set<Integer> handCardsCategories = new HashSet<>(handCards);
         Set<Integer> eyesSet = new HashSet<>();
-        categories.forEach(category -> {
-            if(Collections.frequency(handCards, category) >= 2) {
+        handCardsCategories.forEach(category -> {
+            if (Collections.frequency(handCards, category) >= 2) {
                 eyesSet.add(category);
             }
         });
         return eyesSet;
     }
 
+    /**
+     * 移除手牌中的雀頭
+     *
+     * @param handCards 手牌
+     * @param eye 雀頭
+     */
     private void removeEye(List<Integer> handCards, Integer eye) {
-        for(int i = 0; i < 2; i++) {
+        for (int i = 0; i < 2; i++) {
             handCards.remove(Integer.valueOf(eye));
         }
     }
 
-    private void removeAllTriplet(List<Integer> handCards, Set<Integer> categories) {
-        categories.forEach(category -> {
-            int frequency = Collections.frequency(handCards, category);
-            if(frequency >= 3 && frequency <=4) {
-                handCards.removeIf(card -> card == category);
+    /**
+     * 移除此副牌中的刻子、槓子
+     *
+     * @param cards 手牌 or 門前牌
+     * @return 此副牌中刻子+槓子的數量
+     */
+    public static int removeAllTriplet(List<Integer> cards) {
+        Set<Integer> categories = new HashSet<>(cards);
+        int tripletCount = 0;
+        for (Integer category : categories) {
+            int frequency = Collections.frequency(cards, category);
+            if (frequency == 3 || frequency == 4) {
+                tripletCount++;
+                cards.removeIf(card -> card == category);
             }
-        });
+        }
+        return tripletCount;
     }
 
-    private void removeAllSequence(List<Integer> handCards) {
-        Collections.sort(handCards);
+    /**
+     * 移除牌中的順子
+     *
+     * @param cards 手牌 or 門前牌
+     * @return 此副牌中順子的數量
+     */
+    public static int removeAllSequence(List<Integer> cards) {
         List<Integer> cardsToRemove = new ArrayList<>();
-        for(int index = 0; index < handCards.size(); index++) {
-            Integer card = handCards.get(index);
-            if(card >= MahjongCardEnum.MILLION_ONE.getCode() && card <= MahjongCardEnum.TIAO_NINE.getCode()) {
-                if(index+2 < handCards.size() && handCards.get(index+1) - card == 1 && handCards.get(index+2) - card == 2) {
+        Collections.sort(cards);
+        for (int index = 0; index < cards.size(); index++) {
+            Integer card = cards.get(index);
+            if (card >= MahjongCardEnum.MILLION_ONE.getCode() && card <= MahjongCardEnum.TIAO_NINE.getCode()) {
+                if (index + 2 < cards.size() && cards.get(index + 1) - card == 1 && cards.get(index + 2) - card == 2) {
                     cardsToRemove.add(card);
-                    cardsToRemove.add(handCards.get(index+1));
-                    cardsToRemove.add(handCards.get(index+2));
-                    if(index+3 < handCards.size()) {
-                        index+=2;
+                    cardsToRemove.add(cards.get(index + 1));
+                    cardsToRemove.add(cards.get(index + 2));
+                    if (index + 3 < cards.size()) {
+                        index += 2;
                     } else {
                         break;
                     }
                 }
             }
         }
-        handCards.removeAll(cardsToRemove);
+        cards.removeAll(cardsToRemove);
+        return cardsToRemove.size() / 3;
     }
 
     /**
