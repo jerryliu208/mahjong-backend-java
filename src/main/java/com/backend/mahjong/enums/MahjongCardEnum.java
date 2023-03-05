@@ -47,7 +47,7 @@ public enum MahjongCardEnum {
     private String name;
     private int amount;
 
-    public int getCode(){
+    public int getCode() {
         return code;
     }
 
